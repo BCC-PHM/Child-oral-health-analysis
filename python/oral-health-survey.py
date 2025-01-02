@@ -36,6 +36,10 @@ data["any_dental_issue"] = list(data["Plaque"]) or \
     list(data["Incisor_Caries"]) or \
     list(data["PUFA_signs"])
     
+data.to_csv(
+    config.data_path + "\\processed-oral-health-data.csv"
+    )
+    
 #%% Define deprivation indicies and outcomes to be plotted
     
 # Type : data column
