@@ -92,10 +92,6 @@ all_data <- eth_counts %>%
     sample_perc = n / sum(n),
     pop_perc = N / sum(N),
     difference = sample_perc - pop_perc,
-    group = case_when(
-      difference > 0 ~ "Overrepresented",
-      difference < 0 ~ "Underrepresented"
-    ),
     n_SE = tidyr::replace_na(
       sqrt(n * (sum(n) - n)/sum(n)^3),
       0
@@ -109,7 +105,13 @@ all_data <- eth_counts %>%
       TRUE ~ paste0("n:", n, " | N:", N),
       ),
     diff_95CIUpper = difference + 1.96 * diff_SE,
-    diff_95CILower = difference - 1.96 * diff_SE
+    diff_95CILower = difference - 1.96 * diff_SE,
+    
+    group = case_when(
+      difference > 0 & diff_95CILower>0 ~ "Overrepresented",
+      difference < 0 & diff_95CIUpper< 0~ "Underrepresented",
+      TRUE ~ "No significant difference"
+    ),
   ) %>%
   arrange(BroadEthnicity, Ethnicity)
 
@@ -119,6 +121,10 @@ all_data$Ethnicity <- factor(
   levels = eth_order
 )
 
+all_data$group <- factor(
+  all_data$group,
+  levels = c("Underrepresented","No significant difference", "Overrepresented")
+)
 
 ggplot(all_data, aes(y = Ethnicity, x = difference, fill = group)) +
   geom_col() +
@@ -141,7 +147,7 @@ ggplot(all_data, aes(y = Ethnicity, x = difference, fill = group)) +
     vjust = 0.5,
     hjust = 0,
     size = 4) +
-  scale_fill_manual(values = c("#D30F7B", "#77BF42")) +
+  scale_fill_manual(values = c("#77BF42", "gray", "#D30F7B")) +
   scale_x_continuous(
     labels = scales::percent,
     lim = c(-0.15, 0.15))
