@@ -72,7 +72,7 @@ save_map(map, "output/maps/children-surveyed-const.png")
 ########################################################################
 
 outcomes = list(
-  "Plaque" = "% with Plaque\n(<1/3 Labial Surfaces)",
+  "Plaque" = "% with Plaque",
   "Enamel_Caries" = "% with 1 or more\nEnamel Caries",
   "Incisor_Caries" ="% with Incisor\nCaries",
   "PUFA_signs" = "% with 1 or more\nPUFA signs",

@@ -3,6 +3,7 @@ import config
 import pandas as pd
 import EquiPy.Matrix as Mat
 import matplotlib.pyplot as plt
+import numpy as np
 from textwrap import wrap
 from os.path import join
 
@@ -31,10 +32,11 @@ data["Enamel_Caries"] = data["Any enamel caries"] == "1 - Yes"
 data["Incisor_Caries"] = data["Incisor caries present (ECC)"] == "1 - Yes"
 data["PUFA_signs"] = data["pufa"] != "0 - No pufa signs"
 
-data["any_dental_issue"] = list(data["Plaque"]) or \
-    list(data["Enamel_Caries"]) or \
-    list(data["Incisor_Caries"]) or \
-    list(data["PUFA_signs"])
+data["any_dental_issue"] = np.logical_or(
+    data["Plaque"],
+    np.logical_or(data["Enamel_Caries"],
+    np.logical_or(data["Incisor_Caries"],
+    data["PUFA_signs"])))
     
 data.to_csv(
     config.data_path + "\\processed-oral-health-data.csv"
@@ -50,7 +52,7 @@ IMD_types = {
 
 # data column : Plot title
 outcomes = {
-    "Plaque" : "% with Plaque\n(<1/3 Labial Surfaces)",
+    "Plaque" : "% with Plaque",
     "Enamel_Caries" : "% with 1 or more\nEnamel Caries",
     "Incisor_Caries" :"% with Incisor\nCaries",
     "PUFA_signs" : "% with 1 or more\nPUFA signs",
@@ -120,5 +122,5 @@ for IMD_type in IMD_types.keys():
                      IMD_type,var+".png")
         fig.savefig(save_name, bbox_inches = "tight",
                         dpi = 300)
-    break
+
 plt.close("all")
