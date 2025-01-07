@@ -71,20 +71,10 @@ save_map(map, "output/maps/children-surveyed-const.png")
 ######         Plot outcome percentages by Constituency           ######
 ########################################################################
 
-outcomes = list(
-  "Plaque" = "% with Plaque",
-  "Enamel_Caries" = "% with 1 or more Enamel Caries",
-  "Incisor_Caries" ="% with Incisor Caries",
-  "PUFA_signs" = "% with 1 or more PUFA signs",
-  "Decayed_teeth" = "% with 1 or more decayed teeth",
-  "Missing_teeth" = "% with 1 or more missing teeth",
-  "Filled_teeth" = "% with 1 or more filled teeth",
-  "Missing_filled_decayed_teeth" =  "% with one or more decayed/missing/filled teeth"
-)
-
 const_outcomes <- oh_data %>%
   group_by(Constituency) %>%
   summarise(
+    num_children = n(),
     Plaque = 100 * mean(Plaque == "True"),
     Enamel_Caries = 100 * mean(Enamel_Caries == "True"),
     Incisor_Caries = 100 * mean(Incisor_Caries == "True"),
@@ -93,7 +83,23 @@ const_outcomes <- oh_data %>%
     Missing_teeth = 100 * mean(Missing_teeth == "True"),
     Filled_teeth = 100 * mean(Filled_teeth == "True"),
     Missing_filled_decayed_teeth = 100 * mean(Missing_filled_decayed_teeth == "True"),
+    Mean_DMTF_per_child = mean(total_dmtf)
   )
+
+outcomes = list(
+  "Plaque" = "% with Plaque",
+  "Enamel_Caries" = "% with 1 or more Enamel Caries",
+  "Incisor_Caries" ="% with Incisor Caries",
+  "PUFA_signs" = "% with 1 or more PUFA signs",
+  "Decayed_teeth" = "% with 1 or more decayed teeth",
+  "Missing_teeth" = "% with 1 or more missing teeth",
+  "Filled_teeth" = "% with 1 or more filled teeth",
+  "Missing_filled_decayed_teeth" =  "% with one or more decayed/missing/filled teeth",
+  "Mean_DMTF_per_child" = "Mean DMTF per child"
+)
+
+# Suppress Edgbaston since only one child
+const_outcomes[names(outcomes)][const_outcomes$Constituency == "Edgbaston",] = NA
 
 for (outcome_i in names(outcomes)) {
   map_i <- plot_map(
