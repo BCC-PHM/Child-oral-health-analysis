@@ -35,12 +35,8 @@ data["Decayed_teeth"] = data["dt"] > 0
 data["Missing_teeth"] = data["mt"] > 0
 data["Filled_teeth"] = data["ft"] > 0 
 data["Missing_filled_decayed_teeth"] = data["dmft"] > 0
+data["total_dmtf"] = data["dmft"]
 
-data["any_dental_issue"] = np.logical_or(
-    data["Plaque"],
-    np.logical_or(data["Enamel_Caries"],
-    np.logical_or(data["Incisor_Caries"],
-    data["PUFA_signs"])))
     
 data.to_csv(
     config.data_path + "\\processed-oral-health-data.csv"
@@ -63,7 +59,7 @@ outcomes = {
     "Decayed_teeth" : "% with 1 or more\ndecayed teeth",
     "Missing_teeth" : "% with 1 or more\nmissing teeth",
     "Filled_teeth" : "% with 1 or more\nfilled teeth",
-    "Missing_filled_decayed_teeth" : "% with one or more\ndecayed/missing/filled teeth"
+    "Missing_filled_decayed_teeth" : "% with one or more\nDMFT"
     }
 
 #%% Plot number surveyed
@@ -110,14 +106,13 @@ for IMD_type in IMD_types.keys():
                 IMD_col = IMD_types[IMD_type],
                 mode="count"
                 )
-        count_pivot[count_pivot == 0] = 0.1
         
         fig = Mat.inequality_map(count_pivot, 
                            perc_pivot,
                            title = outcomes[var],
                            ttest = True,
-                           supp_thresh=0.2,
-                           supp_label = "No data",
+                           supp_thresh=5,
+                           supp_label = "<5",
                            CI_method = "Wilson",
                            palette="Blues",
                            bar_rel_size = [0.25, 0.25])
@@ -131,3 +126,37 @@ for IMD_type in IMD_types.keys():
                         dpi = 300)
 
 plt.close("all")
+
+#%% Mean DMTF
+for IMD_type in IMD_types.keys():
+    av_pivot = Mat.get_pivot(
+            data, 
+            "total_dmtf",
+            eth_col = "Broad_Ethnicity", 
+            IMD_col = IMD_types[IMD_type],
+            mode="avg"
+            ).fillna(0)
+    
+    count_pivot = Mat.get_pivot(
+            data, 
+            eth_col = "Broad_Ethnicity", 
+            IMD_col = IMD_types[IMD_type],
+            mode="count"
+            )
+    
+    fig = Mat.inequality_map(count_pivot, 
+                       av_pivot,
+                       agg_type = "avg",
+                       title = "Mean DMFT\nper Child",
+                       supp_thresh=5,
+                       supp_label = "<5",
+                       palette="Blues",
+                       bar_rel_size = [0.25, 0.25])
+    fig.axes[0].set_ylabel("IMD Quintile\n(" +IMD_type +")")
+    fig.axes[0].set_xlabel("")
+    
+    # Save matrix
+    save_name = join("..","output", "matricies",
+                 IMD_type,var+".png")
+    fig.savefig(save_name, bbox_inches = "tight",
+                    dpi = 300)
