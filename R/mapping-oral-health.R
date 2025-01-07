@@ -73,10 +73,13 @@ save_map(map, "output/maps/children-surveyed-const.png")
 
 outcomes = list(
   "Plaque" = "% with Plaque",
-  "Enamel_Caries" = "% with 1 or more\nEnamel Caries",
-  "Incisor_Caries" ="% with Incisor\nCaries",
-  "PUFA_signs" = "% with 1 or more\nPUFA signs",
-  "any_dental_issue" = "% with 1 or more\ndental issue"
+  "Enamel_Caries" = "% with 1 or more Enamel Caries",
+  "Incisor_Caries" ="% with Incisor Caries",
+  "PUFA_signs" = "% with 1 or more PUFA signs",
+  "Decayed_teeth" = "% with 1 or more decayed teeth",
+  "Missing_teeth" = "% with 1 or more missing teeth",
+  "Filled_teeth" = "% with 1 or more filled teeth",
+  "Missing_filled_decayed_teeth" =  "% with one or more decayed/missing/filled teeth"
 )
 
 const_outcomes <- oh_data %>%
@@ -86,7 +89,10 @@ const_outcomes <- oh_data %>%
     Enamel_Caries = 100 * mean(Enamel_Caries == "True"),
     Incisor_Caries = 100 * mean(Incisor_Caries == "True"),
     PUFA_signs = 100 * mean(PUFA_signs == "True"),
-    any_dental_issue = 100 * mean(any_dental_issue == "True"),
+    Decayed_teeth = 100 * mean(Decayed_teeth == "True"),
+    Missing_teeth = 100 * mean(Missing_teeth == "True"),
+    Filled_teeth = 100 * mean(Filled_teeth == "True"),
+    Missing_filled_decayed_teeth = 100 * mean(Missing_filled_decayed_teeth == "True"),
   )
 
 for (outcome_i in names(outcomes)) {
@@ -98,10 +104,12 @@ for (outcome_i in names(outcomes)) {
     map_title = outcomes[[outcome_i]],
     style = "cont"
   )
+  
   save_name <- file.path(
     "output",
     "maps",
     paste0(outcome_i, ".png")
   )
+  
   save_map(map_i, save_name)
 }

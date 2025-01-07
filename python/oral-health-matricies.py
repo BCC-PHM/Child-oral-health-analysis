@@ -31,6 +31,10 @@ data["Plaque"] = data["plaque"] != "0 - Teeth appear clean"
 data["Enamel_Caries"] = data["Any enamel caries"] == "1 - Yes"
 data["Incisor_Caries"] = data["Incisor caries present (ECC)"] == "1 - Yes"
 data["PUFA_signs"] = data["pufa"] != "0 - No pufa signs"
+data["Decayed_teeth"] = data["dt"] > 0
+data["Missing_teeth"] = data["mt"] > 0
+data["Filled_teeth"] = data["ft"] > 0 
+data["Missing_filled_decayed_teeth"] = data["dmft"] > 0
 
 data["any_dental_issue"] = np.logical_or(
     data["Plaque"],
@@ -56,7 +60,10 @@ outcomes = {
     "Enamel_Caries" : "% with 1 or more\nEnamel Caries",
     "Incisor_Caries" :"% with Incisor\nCaries",
     "PUFA_signs" : "% with 1 or more\nPUFA signs",
-    "any_dental_issue" : "% with 1 or more\ndental issue"
+    "Decayed_teeth" : "% with 1 or more\ndecayed teeth",
+    "Missing_teeth" : "% with 1 or more\nmissing teeth",
+    "Filled_teeth" : "% with 1 or more\nfilled teeth",
+    "Missing_filled_decayed_teeth" : "% with one or more\ndecayed/missing/filled teeth"
     }
 
 #%% Plot number surveyed
