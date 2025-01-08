@@ -95,7 +95,7 @@ outcomes = list(
   "Missing_teeth" = "% with 1 or more missing teeth",
   "Filled_teeth" = "% with 1 or more filled teeth",
   "Missing_filled_decayed_teeth" =  "% with one or more decayed/missing/filled teeth",
-  "Mean_DMTF_per_child" = "Mean DMTF per child"
+  "Mean_DMTF_per_child" = "Mean DMFT per child"
 )
 
 # Suppress Edgbaston since only one child

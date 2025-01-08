@@ -25,6 +25,11 @@ data["Broad_Ethnicity"] = ["\n".join(wrap(name, 15)) for name in data["Broad_Eth
 # Update IMD column names
 data["IMD19_LA_Quintile"] = data["IMD (2019) Upper Tier LA Quintile"]
 data["IMD19_National_Quintile"] = data["IMD (2019) National Quintile"]
+data["IMD19_National_3+"] = np.where(
+    data["IMD19_National_Quintile"] < 3,
+    data["IMD19_National_Quintile"],
+    "3+"
+    )
 
 # Create boolean outcomes
 data["Plaque"] = data["plaque"] != "0 - Teeth appear clean"
@@ -46,8 +51,9 @@ data.to_csv(
     
 # Type : data column
 IMD_types = {
-    "National" : "IMD19_National_Quintile",
-    "LA" : "IMD19_LA_Quintile"
+    "National-all" : "IMD19_National_Quintile",
+    "LA" : "IMD19_LA_Quintile",
+    "National" : "IMD19_National_3+"
     }
 
 # data column : Plot title
@@ -71,11 +77,18 @@ for IMD_type in IMD_types.keys():
             mode="count"
             ).astype(int)
     
+    if IMD_type == "National":
+        IMD_ticks = ["1\nMost\ndeprived", "2", "3+"]
+    else:
+        IMD_ticks =["1\nMost\ndeprived","2","3","4","5\nLeast\ndeprived"]
+    
     fig = Mat.inequality_map(count_pivot, 
                        title = "Children Surveyed",
-                       supp_thresh=0,
+                       supp_thresh=5,
+                       supp_label= "<5",
                        CI_method = "Wilson",
                        palette="Blues",
+                       IMD_ticks = IMD_ticks,
                        bar_rel_size = [0.25, 0.25])
     
     fig.axes[0].set_ylabel("IMD Quintile\n(" +IMD_type +")")
@@ -91,6 +104,12 @@ plt.close("all")
 #%% Plot inequality matricices
 
 for IMD_type in IMD_types.keys():
+    
+    if IMD_type == "National":
+        IMD_ticks = ["1\nMost\ndeprived", "2", "3+"]
+    else:
+        IMD_ticks =["1\nMost\ndeprived","2","3","4","5\nLeast\ndeprived"]
+    
     for i, var in enumerate(outcomes.keys()):    
         perc_pivot = Mat.get_pivot(
                 data, 
@@ -112,6 +131,7 @@ for IMD_type in IMD_types.keys():
                            title = outcomes[var],
                            ttest = True,
                            supp_thresh=5,
+                           IMD_ticks = IMD_ticks,
                            supp_label = "<5",
                            CI_method = "Wilson",
                            palette="Blues",
@@ -129,6 +149,12 @@ plt.close("all")
 
 #%% Mean DMTF
 for IMD_type in IMD_types.keys():
+    
+    if IMD_type == "National":
+        IMD_ticks = ["1\nMost\ndeprived", "2", "3+"]
+    else:
+        IMD_ticks =["1\nMost\ndeprived","2","3","4","5\nLeast\ndeprived"]
+    
     av_pivot = Mat.get_pivot(
             data, 
             "total_dmtf",
@@ -147,9 +173,12 @@ for IMD_type in IMD_types.keys():
     fig = Mat.inequality_map(count_pivot, 
                        av_pivot,
                        agg_type = "avg",
-                       title = "Mean DMFT\nper Child",
+                       title = "Mean DMFT\nper child",
                        supp_thresh=5,
                        supp_label = "<5",
+                       IMD_ticks = IMD_ticks,
+                       magnitude = 1,
+                       CI_method = "Byar",
                        palette="Blues",
                        bar_rel_size = [0.25, 0.25])
     fig.axes[0].set_ylabel("IMD Quintile\n(" +IMD_type +")")
@@ -157,6 +186,8 @@ for IMD_type in IMD_types.keys():
     
     # Save matrix
     save_name = join("..","output", "matricies",
-                 IMD_type,var+".png")
+                 IMD_type,"dmft.png")
     fig.savefig(save_name, bbox_inches = "tight",
                     dpi = 300)
+    
+plt.close("all")
