@@ -14,7 +14,8 @@ sns.set_theme(style="ticks", rc=custom_params)
 #%% Load and process data
 
 data = pd.read_excel(
-    config.data_path + "\\Oral Health Epi Survey.xlsx"
+        config.data_path + "\\Oral Health Epi Survey - 2024.xlsx",
+        sheet_name = "5Y data 2024"
     )
 
 # Update Broad ethnicity label
@@ -33,18 +34,25 @@ data["IMD19_National_3+"] = np.where(
 
 # Create boolean outcomes
 data["Plaque"] = data["plaque"] != "0 - Teeth appear clean"
+data["Plaque"][data["plaque"] == "X - Not recorded"] = np.nan
+
 data["Enamel_Caries"] = data["Any enamel caries"] == "1 - Yes"
+data["Enamel_Caries"][data["Any enamel caries"] == "X - Not recorded"] = np.nan
+
 data["Incisor_Caries"] = data["Incisor caries present (ECC)"] == "1 - Yes"
-data["PUFA_signs"] = data["pufa"] != "0 - No pufa signs"
+data["Incisor_Caries"][data["Incisor caries present (ECC)"] == "X - Not recorded"] = np.nan
+
+data["PUFA_signs"] = data["pufa"] != "0 - No teeth with pufa signs"
+data["PUFA_signs"][data["pufa"] == "X - Not recorded"] = np.nan
+
 data["Decayed_teeth"] = data["dt"] > 0
 data["Missing_teeth"] = data["mt"] > 0
 data["Filled_teeth"] = data["ft"] > 0 
 data["Missing_filled_decayed_teeth"] = data["dmft"] > 0
 data["total_dmtf"] = data["dmft"]
-
     
 data.to_csv(
-    config.data_path + "\\processed-oral-health-data.csv"
+    config.data_path + "\\processed-oral-health-data-2024.csv"
     )
     
 #%% Define deprivation indicies and outcomes to be plotted
@@ -84,18 +92,19 @@ for IMD_type in IMD_types.keys():
     
     fig = Mat.inequality_map(count_pivot, 
                        title = "Children Surveyed",
-                       supp_thresh=5,
-                       supp_label= "<5",
+                       supp_thresh=15,
+                       supp_label= "<15",
                        CI_method = "Wilson",
                        palette="Blues",
                        IMD_ticks = IMD_ticks,
-                       bar_rel_size = [0.25, 0.25])
+                       width = 8,
+                       bar_rel_size = [0.25, 0.2])
     
     fig.axes[0].set_ylabel("IMD Quintile\n(" +IMD_type +")")
     fig.axes[0].set_xlabel("")
     
     # Save matrix
-    save_name = join("..","output", "matricies",
+    save_name = join("..","output", "matricies/2024",
                      IMD_type,"children_surveyed.png")
     fig.savefig(save_name, bbox_inches = "tight",
                     dpi = 300)
@@ -110,7 +119,8 @@ for IMD_type in IMD_types.keys():
     else:
         IMD_ticks =["1\nMost\ndeprived","2","3","4","5\nLeast\ndeprived"]
     
-    for i, var in enumerate(outcomes.keys()):    
+    for i, var in enumerate(outcomes.keys()):  
+        data_i = data.filter(np.logical_not(data[var].isna()))
         perc_pivot = Mat.get_pivot(
                 data, 
                 var,
@@ -130,17 +140,19 @@ for IMD_type in IMD_types.keys():
                            perc_pivot,
                            title = outcomes[var],
                            ttest = True,
-                           supp_thresh=5,
+                           supp_thresh=15,
                            IMD_ticks = IMD_ticks,
-                           supp_label = "<5",
+                           supp_label = "<15",
                            CI_method = "Wilson",
                            palette="Blues",
-                           bar_rel_size = [0.25, 0.25])
+                           width = 8,
+                           bar_rel_size = [0.25, 0.2]
+                           )
         fig.axes[0].set_ylabel("IMD Quintile\n(" +IMD_type +")")
         fig.axes[0].set_xlabel("")
         
         # Save matrix
-        save_name = join("..","output", "matricies",
+        save_name = join("..","output", "matricies/2024",
                      IMD_type,var+".png")
         fig.savefig(save_name, bbox_inches = "tight",
                         dpi = 300)
@@ -174,13 +186,15 @@ for IMD_type in IMD_types.keys():
                        av_pivot,
                        agg_type = "avg",
                        title = "Mean DMFT\nper child",
-                       supp_thresh=5,
-                       supp_label = "<5",
+                       supp_thresh=15,
+                       supp_label = "<15",
                        IMD_ticks = IMD_ticks,
                        magnitude = 1,
                        CI_method = "Byar",
                        palette="Blues",
-                       bar_rel_size = [0.25, 0.25])
+                       width = 8,
+                       bar_rel_size = [0.25, 0.2]
+                       )
     fig.axes[0].set_ylabel("IMD Quintile\n(" +IMD_type +")")
     fig.axes[0].set_xlabel("")
     

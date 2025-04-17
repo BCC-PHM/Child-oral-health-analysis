@@ -14,7 +14,7 @@ if(!exists("oh_data_raw")) {
   oh_data_raw <- read.csv(
     file.path(
       data_path, 
-      "processed-oral-health-data.csv"
+      "processed-oral-health-data-2024.csv"
     )
   ) 
 }
@@ -31,6 +31,7 @@ census_data <- read.csv(
     Ethnicity = case_when(
       Ethnicity == "English, Welsh, Scottish, Northern Irish or British" ~ "White British",
       Ethnicity == "Other Mixed or Multiple ethnic groups" ~ "Mixed other",
+      Ethnicity == "Irish" ~ "Other White",
       TRUE ~ Ethnicity
     ),
     N = Observation
@@ -49,17 +50,18 @@ eth_counts <- oh_data_raw %>%
       "\\w\\d - ", "", Lower.Ethnic.code
       ),
     Ethnicity = case_when(
-      Ethnicity == "British" ~ "White British",
-      Ethnicity == "Black African" ~ "African",
-      Ethnicity == "Black Caribbean" ~ "Caribbean",
-      Ethnicity == "Asian other" ~ "Other Asian",
-      Ethnicity == "Black other" ~ "Other Black",
-      #
+      Ethnicity == "British / English / Welsh / Scottish / Northern Irish" ~ "White British",
+      Ethnicity == "African" ~ "African",
+      Ethnicity == "Caribbean" ~ "Caribbean",
+      Ethnicity == "Asian other including not provided" ~ "Other Asian",
+      Ethnicity == "Black other including not provided" ~ "Other Black",
+      Ethnicity == "Mixed other including not provided" ~ "Mixed other",
       Ethnicity == "White Asian" ~ "White and Asian",
       Ethnicity == "White Black African" ~ "White and Black African",      
       Ethnicity == "White Black Caribbean" ~ "White and Black Caribbean",    
-      Ethnicity == "White other" ~ "Other White",
-      Ethnicity == "Any other" ~ "Any other ethnic group",
+      Ethnicity == "White other including not provided" ~ "Other White",
+      Ethnicity == "Any other including not provided" ~ "Any other ethnic group",
+      Ethnicity == "Irish" ~ "Other White",
       TRUE ~ Ethnicity
     )
   ) %>%
@@ -90,13 +92,13 @@ all_data <- eth_counts %>%
     ),
     n = tidyr::replace_na(n, 0),
     sample_perc = n / sum(n),
-    pop_perc = N / sum(N),
+    pop_perc = N / sum(N, na.rm = T),
     difference = sample_perc - pop_perc,
     n_SE = tidyr::replace_na(
       sqrt(n * (sum(n) - n)/sum(n)^3),
       0
       ),
-    N_SE =  sqrt(N * (sum(N) - N)/sum(N)^3),
+    N_SE =  sqrt(N * (sum(N, na.rm = T) - N)/sum(N, na.rm = T)^3),
     diff_SE = sqrt(n_SE^2 + N_SE^2),
     # Create annotation text with aligned layout
     plt_text = case_when(
@@ -113,7 +115,10 @@ all_data <- eth_counts %>%
       TRUE ~ "No significant difference"
     ),
   ) %>%
-  arrange(BroadEthnicity, Ethnicity)
+  arrange(BroadEthnicity, Ethnicity) %>%
+  filter(
+    !is.na(pop_perc)
+  )
 
 eth_order <- rev(unique(all_data$Ethnicity))
 all_data$Ethnicity <- factor(
@@ -152,5 +157,5 @@ ggplot(all_data, aes(y = Ethnicity, x = difference, fill = group)) +
     labels = scales::percent,
     lim = c(-0.15, 0.15))
   
-ggsave("output/ethnic_representation.png",
+ggsave("output/ethnic_representation_2024.png",
        width = 7, height = 5, dpi = 300)
