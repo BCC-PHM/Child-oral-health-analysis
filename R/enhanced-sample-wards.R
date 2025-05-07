@@ -11,6 +11,7 @@ enhanced_wards <- c(
   "Lozells", "Shard End", "Sparkbrook & Balsall Heath East", "Tyseley & Hay Mills"
 )
 
+# If not already loaded, then load the oral health data
 if(!exists("oh_data_raw")) {
   oh_data_raw <- read.csv(
     file.path(
@@ -216,3 +217,88 @@ save_map(
   map,
   save_name = "output/dmft-map-2024-v2.png"
 )
+
+######################################################################
+#            DMFT prevalence by IMD (National and LA)                #
+######################################################################
+
+dmft_plot_LA <- oh_data_raw %>%
+  group_by(IMD19_LA_Quintile) %>%
+  summarise(
+    dmft_prev = mean(dmft > 0),
+    N = n()
+  ) %>%
+  mutate(
+    Z = qnorm(0.975),
+    dmft_perc_Lower = (dmft_prev + Z^2/(2*N) - Z * sqrt((dmft_prev*(1-dmft_prev)/N) + Z^2/(4*N^2))) / (1 + Z^2/N),
+    dmft_perc_Upper = (dmft_prev + Z^2/(2*N) + Z * sqrt((dmft_prev*(1-dmft_prev)/N) + Z^2/(4*N^2))) / (1 + Z^2/N),
+  ) %>%
+  ggplot(
+    aes(x = IMD19_LA_Quintile, y = dmft_prev)
+  ) +
+  theme_bw() +
+  geom_col(fill = "#3888C1") +
+  geom_errorbar(
+    aes(
+      ymin = dmft_perc_Lower, 
+      ymax = dmft_perc_Upper
+      ), 
+    width = 0.4) +
+  scale_y_continuous(
+    limits = c(0, 0.5),
+    expand = c(0, 0),
+    labels = scales::percent
+  ) +
+  scale_x_continuous(
+    breaks = c(1,2,3,4,5),
+    labels = c("1\nMost deprived", "2", "3", "4", "5\n Least deprived")
+  ) +
+  labs(
+    x = "IMD Quintile (Birmingham scale)",
+    y = "Prevalence of DMFT"
+  )
+
+dmft_plot_LA
+ggsave("output/dmft-imd-la-2024.png", dmft_plot_LA,
+       width = 5, height = 3)
+
+
+dmft_plot_nat <- oh_data_raw %>%
+  group_by(IMD19_National_Quintile) %>%
+  summarise(
+    dmft_prev = mean(dmft > 0),
+    N = n()
+  ) %>%
+  mutate(
+    Z = qnorm(0.975),
+    dmft_perc_Lower = (dmft_prev + Z^2/(2*N) - Z * sqrt((dmft_prev*(1-dmft_prev)/N) + Z^2/(4*N^2))) / (1 + Z^2/N),
+    dmft_perc_Upper = (dmft_prev + Z^2/(2*N) + Z * sqrt((dmft_prev*(1-dmft_prev)/N) + Z^2/(4*N^2))) / (1 + Z^2/N),
+  ) %>%
+  ggplot(
+    aes(x = IMD19_National_Quintile, y = dmft_prev)
+  ) +
+  theme_bw() +
+  geom_col(fill = "#3888C1") +
+  geom_errorbar(
+    aes(
+      ymin = dmft_perc_Lower, 
+      ymax = dmft_perc_Upper
+    ), 
+    width = 0.4) +
+  scale_y_continuous(
+    limits = c(0, 0.6),
+    expand = c(0, 0),
+    labels = scales::percent
+  ) +
+  scale_x_continuous(
+    breaks = c(1,2,3,4,5),
+    labels = c("1\nMost deprived", "2", "3", "4", "5\n Least deprived")
+  ) +
+  labs(
+    x = "IMD Quintile (National scale)",
+    y = "Prevalence of DMFT"
+  )
+
+dmft_plot_nat
+ggsave("output/dmft-imd-nat-2024.png", dmft_plot_nat,
+       width = 5, height = 3)
