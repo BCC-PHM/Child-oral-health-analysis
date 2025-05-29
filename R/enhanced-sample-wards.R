@@ -336,37 +336,46 @@ enchanced_ward_data %>%
   select(c(Ward, dmft_perc )) %>%
   arrange(desc(dmft_perc))
 
-### Ward map
+######################################################################
+#                             Ward maps                              #
+######################################################################
 
-enchanced_map_vals <- oh_data_raw %>%
-  rename(Ward = Ward.Name) %>%
-  group_by(
-    Ward
+map_data <- Ward@data %>%
+  left_join(
+    enchanced_ward_data,
+    by = join_by("Ward")
+    ) %>%
+  select(
+    c("Ward", "dmft_rate_difference", 
+      "av_dmft_difference", "dmft_perc_difference")
   ) %>%
-  summarise(
-    dmft = sum(dmft),
-    N = n()
-  ) %>%
-  mutate(
-    dmft_per_child = case_when(
-      N >= 15 ~ dmft / N,
-      TRUE ~ NA
-    )
+  replace(is.na(.), "No significant difference")
+
+col_names <- c("dmft_rate_difference", 
+               "av_dmft_difference", 
+               "dmft_perc_difference")
+titles <- c("Difference in average dmft per child",
+            "Difference in average dmft for children with at least 1 dmft",
+            "Difference in prevalence of 1 or more dmft")
+
+for (i in 1:3) {
+  col_i <- col_names[[i]]
+  title_i <- titles[[i]]
+  map <- plot_map(
+    map_data,
+    value_header = col,
+    map_type = "Ward",
+    area_name = "Birmingham",
+    palette = c("#3737E1", "gray", "lightblue"),
+    map_title = title_i
   )
+  map
+  save_map(
+    map,
+    save_name = paste0("output/maps/2024/difference/",col_i,".png")
+  )
+}
 
-map <- plot_map(
-  enchanced_map_vals,
-  value_header = "dmft_per_child",
-  map_type = "Ward",
-  area_name = "Birmingham",
-  fill_title = "Average DMFT per child (2024)",
-  style = "cont"
-)
-map
-save_map(
-  map,
-  save_name = "output/dmft-map-2024-v2.png"
-)
 
 ######################################################################
 #            DMFT prevalence by IMD (National and LA)                #
