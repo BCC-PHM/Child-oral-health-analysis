@@ -44,6 +44,7 @@ enchanced_ward_data <- oh_data_raw %>%
     dmft_gtr_0 = mean(dmft > 0),
     dmft_n = sum(dmft),
     N = n(),
+    number_with_dmft = sum(dmft > 0),
     IMD_score = mean(IMD..2019..Score)
   ) %>%
   mutate(
@@ -54,6 +55,12 @@ enchanced_ward_data <- oh_data_raw %>%
     a_prime_rate = dmft_n + 1,
     dmft_rate_Lower = dmft_n * (1 - 1/(9*dmft_n) - Z/3 * sqrt(1/a_prime_rate))**3/N,
     dmft_rate_Upper = a_prime_rate * (1 - 1/(9*a_prime_rate) + Z/3 * sqrt(1/a_prime_rate))**3/N,
+    
+    # average DMFT per child with at least 1 dmft
+    av_dmft = dmft_n / number_with_dmft,
+    a_prime_av_dmft = dmft_n + 1,
+    av_dmft_rate_Lower = dmft_n * (1 - 1/(9*dmft_n) - Z/3 * sqrt(1/a_prime_av_dmft))**3/number_with_dmft,
+    av_dmft_rate_Upper = a_prime_av_dmft * (1 - 1/(9*a_prime_av_dmft) + Z/3 * sqrt(1/a_prime_av_dmft))**3/number_with_dmft,
     
     # proportion of children with DMFT > 1
     dmft_perc = dmft_gtr_0,
@@ -73,9 +80,11 @@ enchanced_ward_data <- oh_data_raw %>%
 large_sample_wards <- enchanced_ward_data %>%
   filter(Ward != "* All other wards *") %>%
   pull(Ward)
-
+################################################################################
+#      Calculate Birmingham averages accounting for enhanced sampling          #
+################################################################################
 brum_averages <- enchanced_ward_data %>%
-  select(c(Ward, dmft_rate, dmft_perc)) %>%
+  select(c(Ward, dmft_rate, dmft_perc, av_dmft)) %>%
   # Join to 5 year old populations
   full_join(
     read_excel("data/five-year-olds-by-ward.xlsx") %>%
@@ -98,7 +107,7 @@ brum_averages <- enchanced_ward_data %>%
     dmft_rate = sum(dmft_rate * Observation) / sum(Observation),
     dmft_perc = sum(dmft_perc * Observation) / sum(Observation)
   )
-
+# Extract average values
 av_dmft_perc <- brum_averages %>%
   pull(
     dmft_perc
@@ -108,6 +117,20 @@ av_dmft_rate <- brum_averages %>%
   pull(
     dmft_rate
   )
+
+# Calculate average dmft (dmft>0) using only non-enhanced sample
+av_av_dmft <- oh_data_raw %>%
+  filter(
+    dmft > 0,
+    Sample.Subgroup == "0 - Main Sample"
+    ) %>%
+  summarise(
+    av_dmft = mean(dmft)
+  ) %>%
+  pull(
+    av_dmft
+  )
+
 
 enchanced_ward_data <- enchanced_ward_data %>%
   mutate(
@@ -119,6 +142,11 @@ enchanced_ward_data <- enchanced_ward_data %>%
     dmft_perc_difference = case_when(
       dmft_perc_Lower > av_dmft_perc ~ "Above Average",
       dmft_perc_Upper < av_dmft_perc ~ "Below Average",
+      TRUE ~ "No significant difference"
+    ),
+    av_dmft_difference = case_when(
+      av_dmft_rate_Lower > av_av_dmft ~ "Above Average",
+      av_dmft_rate_Upper < av_av_dmft ~ "Below Average",
       TRUE ~ "No significant difference"
     )
   )
@@ -133,6 +161,12 @@ enchanced_ward_data$Ward = factor(
 # Order dmft rate differences
 enchanced_ward_data$dmft_rate_difference = factor(
   enchanced_ward_data$dmft_rate_difference,
+  levels = c("Below Average", "No significant difference", "Above Average")
+)
+
+# Order perc rate differences
+enchanced_ward_data$av_dmft_difference = factor(
+  enchanced_ward_data$av_dmft_difference,
   levels = c("Below Average", "No significant difference", "Above Average")
 )
 
@@ -172,13 +206,17 @@ ggplot(enchanced_ward_data, aes(y = Ward, x = dmft_rate, fill = dmft_rate_differ
     axis.text.x = element_text(size = 12)
     ) +
   geom_text(label = "Most Deprived", 
-            x = 3, 
+            x = 3., 
             y = 39.5,
             size = 5) +
   geom_text(label = "Least Deprived", 
-            x = 3, 
+            x = 3., 
             y = 1.5,
-            size = 5) 
+            size = 5) +
+  scale_x_continuous(
+    limits = c(0, 3.5),
+    expand = c(0,0)
+  )
 
 ggsave("output/dmft_rate_2024.png",
        width = 8, height = 10)
@@ -189,6 +227,59 @@ enchanced_ward_data %>%
   filter(dmft_rate_Lower > av_dmft_rate) %>%
   select(c(Ward, dmft_rate )) %>%
   arrange(desc(dmft_rate))
+
+### Average dmft for children with dmft > 0 ###
+
+ggplot(enchanced_ward_data, aes(y = Ward, x = av_dmft, fill = av_dmft_difference)) +
+  geom_col() + 
+  theme_bw() +
+  geom_errorbar(aes(xmin = av_dmft_rate_Lower, xmax = av_dmft_rate_Upper), width = 0.4)+
+  geom_vline(aes(xintercept = av_av_dmft),
+             linewidth = 1.1,
+             linetype = "dashed",
+  ) +
+  labs(
+    fill = "",
+    x = "Average dmft per child (with dmft > 0)",
+    y = "",
+    color = ""
+  ) +
+  scale_fill_manual(
+    values = c("#3737E1", "darkgray", "lightblue")
+  ) +
+  theme(
+    legend.position = "top",
+    legend.title.position = "top",
+    legend.title.align = 0.5,
+    legend.direction="horizontal",
+    legend.background = element_rect(fill='transparent', color=NA), #transparent legend bg
+    legend.box.background = element_rect(fill='transparent', color=NA), #transparent legend panel
+    axis.text.y = element_text(size = 12),
+    axis.text.x = element_text(size = 12)
+  ) +
+  geom_text(label = "Most Deprived", 
+            x = 9.3, 
+            y = 39.5,
+            size = 5) +
+  geom_text(label = "Least Deprived", 
+            x = 9.3, 
+            y = 1.5,
+            size = 5) +
+  scale_x_continuous(
+    limits = c(0, 11),
+    expand = c(0,0)
+  )
+
+ggsave("output/average_dmft_2024.png",
+       width = 8, height = 10)
+
+print("Significantly higher dmft rate (for dmft>0 children) in the following wards:")
+enchanced_ward_data %>% 
+  filter(av_dmft_difference == "Above Average") %>%
+  #filter(av_dmft_rate_Lower > av_av_dmft) %>%
+  select(c(Ward, av_dmft, av_dmft_rate_Lower, dmft_n)) %>%
+  arrange(desc(av_dmft))
+
 
 ### DMFT > 0 Prevalence ###
 
@@ -241,6 +332,7 @@ ggsave("output/dmft_perc_2024.png",
 print("Significantly DMFT prevalence in the following wards:")
 enchanced_ward_data %>% 
   filter(dmft_perc_Lower > av_dmft_perc) %>%
+  mutate(dmft_perc = 100 * dmft_perc) %>%
   select(c(Ward, dmft_perc )) %>%
   arrange(desc(dmft_perc))
 
