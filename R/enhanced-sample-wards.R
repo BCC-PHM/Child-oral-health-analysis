@@ -193,6 +193,7 @@ ggplot(enchanced_ward_data, aes(y = Ward, x = dmft_rate, fill = dmft_rate_differ
     color = ""
   ) +
   scale_fill_manual(
+    breaks = c("Below Average", "No significant difference", "Above Average"),
     values = c("#3737E1", "darkgray", "lightblue")
   ) +
   theme(
@@ -245,6 +246,7 @@ ggplot(enchanced_ward_data, aes(y = Ward, x = av_dmft, fill = av_dmft_difference
     color = ""
   ) +
   scale_fill_manual(
+    breaks = c("Below Average", "No significant difference", "Above Average"),
     values = c("#3737E1", "darkgray", "lightblue")
   ) +
   theme(
@@ -298,6 +300,7 @@ ggplot(enchanced_ward_data, aes(y = Ward, x = dmft_perc, fill = dmft_perc_differ
     color = ""
   ) +
   scale_fill_manual(
+    breaks = c("Below Average", "No significant difference", "Above Average"),
     values = c("#3737E1", "darkgray", "lightblue")
   ) +
   theme(
@@ -310,7 +313,6 @@ ggplot(enchanced_ward_data, aes(y = Ward, x = dmft_perc, fill = dmft_perc_differ
     axis.text.y = element_text(size = 12),
     axis.text.x = element_text(size = 12)
   ) +
-  xlim(0,1) +
   scale_x_continuous(
     labels = scales::percent,
     limits = c(0, 1),
@@ -363,7 +365,7 @@ for (i in 1:3) {
   title_i <- titles[[i]]
   map <- plot_map(
     map_data,
-    value_header = col,
+    value_header = col_i,
     map_type = "Ward",
     area_name = "Birmingham",
     palette = c("#3737E1", "gray", "lightblue"),
